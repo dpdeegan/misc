@@ -1,0 +1,80 @@
+'''
+this script works, kind of. it doesnt get any decimanl places on the x,y, even though table fields are double
+it takes 10 minutes to run. Most recent run Started:  2015-12-18 14:42:27.245000
+for 1612 final records:                     Ednded:   2015-12-18 14:52:39.702000
+
+'''
+import arcpy, datetime
+
+
+from datetime import datetime
+
+start = datetime.today()
+print start
+
+#
+#set your variables here
+#
+arcpy.env.overwriteOutput = False
+infc = r'J:\GIS files\GIS_DATA\Transportation\Transportation.gdb\Centerline\Centerline2' #this is the FC you are reading to get points from
+table = r'J:\GIS files\GIS_DATA\Transportation\Transportation.gdb\PtsOutputTable'       #this table is used for schema
+path = r'J:\GIS files\GIS_DATA\Transportation\Transportation.gdb'                       #path of your gdb. only works with gdb
+tablenew = "Centerline3Pts"                                                             #name of table to write to, **MUST BE UNIQUE**
+arcpy.CreateTable_management(path, tablenew, "endPoints")                               #creates new table to write to, based on schema of existing table
+fields = ("SEGMENT_ID", "startX", "startY", "endX", "endY", "NAME")
+
+arcpy.env.workspace = path
+
+#open search cursor on input fc
+for row in arcpy.da.SearchCursor(infc, ["OID@", "SHAPE@", "SEGMENT_ID", "NAME"]):
+    # read the current multipoint's ID
+    # gets value of Segment_ID and NAME of segment
+    print("Feature {}:".format(row[0]))         #print Object ID
+    partnum = 0                                 #this is not needed for this type of script but important for others
+    name = row[3]                               #get name   (to used to build list of road names at interestions
+    segID = row[2]                              #get SEGMENT_ID (for joins later)
+
+    # Step through each part of the feature
+    #start insert cursor on table
+    pts = arcpy.da.InsertCursor(path + "\\"+tablenew, fields )
+    for part in row[1]:     #row[1] is the SHAPE@ object
+##        # Print the part number
+##        #
+##        #print("Part {}:".format(partnum))
+        #examines the vertecies in each part
+        #length of part is used to determine the start part[0] and end part[len(part)-1]
+        #note: end of part is len(part) - 1, because the count starts at 0, not 1
+        
+        print len(part)
+        end = len(part) -1
+        # Step through each vertex in the feature
+##        #print str(part[0].X) + " , " + str(part[0].Y)
+##        #print str(part[end].X) + " , " + str(part[end].Y)
+        #pts = arcpy.InsertCursor(table)
+        pts.insertRow((segID, part[0].X, part[0].Y, part[end].X, part[end].Y, name))    #inserting in to table
+##        pt = pts.newRow()
+##        pt.setValue("SEGMENT_ID", segID)
+##        pt.setValue("startX", part[0].X)
+##        pt.setValue("startY", part[0].Y)
+##        pt.setValue("endX", part[end].X)
+##        pt.setValue("endY", part[end].Y)
+##        pt.setValue("NAME", name)
+##        pts.insertRow(pt)
+        print "table updated"
+    del pts         #remove cursor to prevent data locks
+
+end = datetime.today()
+print "Started:  " + str(start)
+print "Ednded:   " + str(end)
+
+#for a later script, this that deals with polygons with holes
+##        for pnt in part:
+##            if pnt:
+##                # Print x,y coordinates of current point
+##                #
+##                print("{}, {}".format(pnt.X, pnt.Y))
+##            else:
+##                # If pnt is None, this represents an interior ring
+##                #
+##                print("Interior Ring:")
+#        partnum += 1
