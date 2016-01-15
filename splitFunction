@@ -1,0 +1,41 @@
+'''
+this function takes the unformatted string of all streetnames at an intersection
+ex: "DELTA ST' & 'DELTA ST' & 'DEDI AVE' & 'DEDI AVE"
+uses re.split to create a list of single street name, removes extra ' or other garbage
+an empty list is created to store unique streets, and to be compared to the first list
+and empty string is also created to make sure the output is normal
+if an street is not in the outlist already, it is aappended
+with the new outlist, a string is created by joining a separator string " to " to each item in the list
+the function returns a string of unique streets separated with " to "
+the separator can be changed, function can be altered to accept it as another input
+
+function accepts a string, and a delimiter in quotes ie: " & "
+        newstring = uniqueString(row[0], " & ")
+'''
+def uniqueString(instring,delim):
+    import re
+    inlist = re.split(delim, instring.replace("'" , ""))
+    outlist = []
+    instring = ""
+    for item in inlist:
+        if item not in outlist:
+            outlist.append(item)
+    outstring = " to ".join(map(str , outlist))
+    return outstring
+
+import arcpy
+infc = r'C:\GIS\roadstuff.gdb\Street_Segments'
+#for testing
+with arcpy.da.SearchCursor(infc, "StreetName") as cursor:
+    for row in cursor:
+        print uniqueString(row[0] , " & ")
+
+#for updating
+##with arcpy.da.UpdateCursor(infc, "StreetName", "SegmentName") as cursor:
+##    for row in cursor:
+##        segname = uniqueString(row[0] , " & ")
+##        row[1] = segname
+##        cursor.updateRow(row)
+##del row, cursor
+
+
